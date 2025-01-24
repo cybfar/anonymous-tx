@@ -1,0 +1,53 @@
+Voici un fichier `.gitignore` adapté pour un projet Truffle :  
+
+```
+# Ignorer les fichiers de dépendances
+node_modules/
+build/
+
+# Ignorer les artefacts de compilation de Truffle
+*.json
+*.sol.js
+*.bin
+*.abi
+*.map
+artifacts/
+
+.deps/
+
+# Ignorer les fichiers de configuration spécifiques à l'IDE
+.idea/
+.vscode/
+*.log
+*.swp
+*.swo
+
+# Ignorer les fichiers liés aux tests et à la blockchain locale
+test/
+coverage/
+coverage.json
+ganache_db/
+ganache-data/
+truffle-config.js.bak
+
+# Ignorer les fichiers environnementaux
+.env
+.env.local
+.env.development
+.env.production
+
+# Ignorer les sorties de l'outil de test Solidity et coverage
+coverage/
+cache/
+remixd/
+remix-workspace/
+
+# Ignorer les fichiers générés par Solidity Compiler
+contracts/*.dbg.json
+contracts/*.dbg.yaml
+
+# Ignorer les sorties de scripts de déploiement
+deployments/
+```
+
+Ajoute ce fichier à la racine de ton projet Truffle pour éviter de versionner les fichiers inutiles ou sensibles.
