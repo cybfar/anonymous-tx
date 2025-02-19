@@ -277,7 +277,9 @@ export const useWeb3Store = defineStore("web3", {
         const isWhitelisted = await this.kycRegistry.methods
           .isWhitelisted(address)
           .call();
-        return isWhitelisted;
+        return isWhitelisted
+          ? "This address is whitelisted"
+          : "This address is not whitelisted";
       } catch (error) {
         this.showNotification("error", "Failed to check whitelist status");
         throw error;

@@ -2,6 +2,7 @@
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
+  ssr: false,
   compatibilityDate: "2024-11-01",
   css: ["~/assets/css/main.css"],
   vite: {
@@ -18,5 +19,5 @@ export default defineNuxtConfig({
       Inter: [100, 200, 300, 400, 500, 600, 700, 800, 900],
     },
   },
-  devtools: { enabled: true },
+  devtools: { enabled: false },
 });

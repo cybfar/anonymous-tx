@@ -6,6 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { MerkleTree } = require("fixed-merkle-tree");
 const createKeccakHash = require("keccak");
+const { validator, isAddress } = require("web3-validator");
 
 const initWeb3 = require("./config/web3.js");
 
@@ -124,11 +125,14 @@ app.post("/create-deposit", async (req, res) => {
 
 app.post("/create-withdrawal", async (req, res) => {
   try {
-    const poseidon = await circomlibjs.buildPoseidon();
     const mimcsponge = await circomlibjs.buildMimcSponge();
 
     const { note, withdrawalAddress, poolAmount, networkId } = req.body;
     const { web3, mixer } = initWeb3(networkId);
+
+    if (!isAddress(withdrawalAddress)) {
+      throw new Error("Invalid withdrawal address");
+    }
 
     const { amount, nullifier, secret } = parseNote(note);
     const { commitmentHash } = await build(nullifier, secret, amount);
@@ -171,12 +175,8 @@ app.post("/create-withdrawal", async (req, res) => {
       (e) => e.returnValues.commitment === BigInt(commitmentHash)
     );
 
-    console.log(
-      "Current deposit : " + currentDepositEvent.returnValues.commitment
-    );
-
     if (!currentDepositEvent) {
-      throw new Error("Deposit not found");
+      throw new Error("Deposit not found for this note");
     }
 
     const depositIndex = currentDepositEvent.returnValues.leafIndex;
@@ -186,7 +186,7 @@ app.post("/create-withdrawal", async (req, res) => {
     const isSpent = await mixer.methods.isSpent(nullifierHash).call();
 
     if (!isValidRoot) {
-      throw new Error("Invalid deposit note");
+      throw new Error("Deposit not found for this note !");
     }
 
     // Re build the tree with mimcsponge to send inputs to the circuit
@@ -250,10 +250,21 @@ app.post("/create-withdrawal", async (req, res) => {
       zkeyPath
     );
 
+    const proofForContract = [
+      [proof.pi_a[0], proof.pi_a[1]],
+      [
+        [proof.pi_b[0][1], proof.pi_b[0][0]],
+        [proof.pi_b[1][1], proof.pi_b[1][0]],
+      ],
+      [proof.pi_c[0], proof.pi_c[1]],
+    ];
+
     const response = {
       success: true,
-      proof: proof,
+      proof: proofForContract,
       publicSignals: publicSignals,
+      root: root,
+      nullifierHash: nullifierHash,
     };
 
     res.json(response);

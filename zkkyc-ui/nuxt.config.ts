@@ -21,5 +21,5 @@ export default defineNuxtConfig({
   build: {
     transpile: ["circomlibjs"],
   },
-  devtools: { enabled: true },
+  devtools: { enabled: false },
 });

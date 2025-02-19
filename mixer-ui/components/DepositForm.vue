@@ -19,6 +19,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['depositDone'])
+
 const handleDeposit = async () => {
   isProcessing.value = true
 
@@ -29,33 +31,19 @@ const handleDeposit = async () => {
     return
 
   }
-  const response = await fetch('http://192.168.56.2:3001/create-deposit', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      'poolAmount': props.poolAmount,
-      'selectedPool': props.selectedPool,
-    })
-  });
-
-  const data = await response.json();
-  if (data.success) {
-
-    const { nullifier, secret, commitmentHash } = data
-    commitment.value = commitmentHash
-    note.value = "phantom-eth." + props.poolAmount + "." + nullifier + "." + secret
-  }
 
   try {
     const result = await web3Store.deposit(props.poolAmount, commitment.value)
-    if (result) {
+    if (result.success) {
       console.log(result);
+
+      note.value = result.note
 
       const blob = new Blob([note.value], { type: "text/plain;charset=utf-8" });
       saveAs(blob, "phantom-eth-deposit-note." + Date.now() + "." + props.selectedPool + ".txt");
       depositNote.value = note.value
+
+      emit('depositDone')
     }
 
   } catch (error) {
@@ -72,7 +60,7 @@ const handleDeposit = async () => {
     <h3 class="text-lg font-medium text-white mb-4">Deposit ETH</h3>
 
     <!-- Note Box -->
-    <div class="mb-6 p-4 bg-error-800 rounded-lg">
+    <div class="mb-6 p-4 bg-info-700 rounded-lg">
       <p class="text-sm text-gray-300">
         You will receive a note after deposit. Save it - you'll need it to withdraw your funds.
       </p>

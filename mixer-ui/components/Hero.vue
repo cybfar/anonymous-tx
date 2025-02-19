@@ -4,6 +4,8 @@ const web3Store = useWeb3Store()
 const operationType = ref('deposit')
 const selectedPool = ref('')
 const poolAmount = ref(0)
+const depositNumber = ref(0)
+const anonymitySet = ref(0)
 
 const pools = [
     {
@@ -22,6 +24,28 @@ const pools = [
         symbol: 'ETH'
     },
 ]
+
+function changeOperationType(type) {
+    operationType.value = String(type)
+}
+
+async function getNumberOfDepositAndAnonymitySet() {
+    console.log("Trigerred");
+
+    const result = await web3Store.getNumberOfDepositAndAnonymitySet(poolAmount.value)
+    if (result.success) {
+        depositNumber.value = result.depositNumber
+        anonymitySet.value = result.anonymitySetSize
+    }
+}
+
+watch(
+    selectedPool,
+    async () => {
+        getNumberOfDepositAndAnonymitySet()
+    },
+    { immediate: true }
+)
 
 </script>
 
@@ -108,9 +132,8 @@ const pools = [
                         <div class="p-6 bg-gray-700 rounded-xl">
                             <h3 class="text-lg font-medium text-white mb-4">Deposit ETH</h3>
                             <p class="text-gray-300 mb-4">Mix your ETH into the pool</p>
-                            <button @click="operationType = 'deposit'"
-                                class="w-full py-3 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition-all"
-                                :disabled="!web3Store.isConnected">
+                            <button v-if="web3Store.isConnected" @click="changeOperationType('deposit')"
+                                class="w-full py-3 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition-all">
                                 Deposit
                             </button>
                         </div>
@@ -119,9 +142,8 @@ const pools = [
                         <div class="p-6 bg-gray-700 rounded-xl">
                             <h3 class="text-lg font-medium text-white mb-4">Withdraw ETH</h3>
                             <p class="text-gray-300 mb-4">Withdraw your mixed ETH</p>
-                            <button @click="operationType = 'withdrawal'"
-                                class="w-full py-3 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition-all"
-                                :disabled="!web3Store.isConnected">
+                            <button v-if="web3Store.isConnected" @click="changeOperationType('withdrawal')"
+                                class="w-full py-3 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition-all">
                                 Withdraw
                             </button>
                         </div>
@@ -147,10 +169,10 @@ const pools = [
                     </div>
 
                     <DepositForm v-if="operationType == 'deposit'" :selected-pool="selectedPool"
-                        :pool-amount="poolAmount" />
+                        :pool-amount="poolAmount" @deposit-done="getNumberOfDepositAndAnonymitySet(poolAmount)" />
 
                     <WithdrawalForm v-if="operationType == 'withdrawal'" :selected-pool="selectedPool"
-                        :pool-amount="poolAmount" />
+                        :pool-amount="poolAmount" @withdrawal-done="getNumberOfDepositAndAnonymitySet(poolAmount)" />
 
                     <!-- Pool Statistics -->
                     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -160,11 +182,11 @@ const pools = [
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <p class="text-gray-400 text-sm">Total Deposits</p>
-                            <p class="text-white text-xl font-bold">150</p>
+                            <p class="text-white text-xl font-bold">{{ depositNumber }}</p>
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <p class="text-gray-400 text-sm">Anonymity Set</p>
-                            <p class="text-white text-xl font-bold">50</p>
+                            <p class="text-white text-xl font-bold">{{ anonymitySet }}</p>
                         </div>
                     </div>
                 </div>

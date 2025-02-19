@@ -1,14 +1,14 @@
 <script setup>
 
-import { saveAs } from 'file-saver'
-
 const web3Store = useWeb3Store()
 const isProcessing = ref(false)
 const depositNote = ref('')
 const withdrawalAddress = ref('')
+const withdrawalSuccess = ref(false)
+const withdrawalSuccessMessage = ref('')
+const fees = ref(0)
 
-const commitment = ref('')
-const note = ref('')
+const emit = defineEmits(['WithdrawalDone'])
 
 const props = defineProps({
   selectedPool: {
@@ -23,6 +23,8 @@ const props = defineProps({
 
 const handleWithdrawal = async () => {
   isProcessing.value = true
+  withdrawalSuccess.value = false
+  withdrawalSuccessMessage.value = ''
 
   if (props.poolAmount == '' || props.selectedPool == '' || depositNote.value == '' || withdrawalAddress.value == '') {
     console.error("Please select a withdrawal amount, paste your note and your withdrawal address.");
@@ -34,8 +36,12 @@ const handleWithdrawal = async () => {
 
   try {
     const result = await web3Store.withdraw(props.poolAmount, props.selectedPool, depositNote.value, withdrawalAddress.value)
-    if (result) {
-      console.log(result);
+    if (result.success) {
+      withdrawalSuccess.value = true
+      withdrawalSuccessMessage.value = result.message
+      depositNote.value = ''
+      withdrawalAddress.value = ''
+      emit('WithdrawalDone')
     }
 
   } catch (error) {
@@ -45,31 +51,20 @@ const handleWithdrawal = async () => {
     isProcessing.value = false
   }
 
-
-  // const response = await fetch('http://192.168.56.2:3001/create-withdrawal', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({
-  //     'poolAmount': props.poolAmount,
-  //     'selectedPool': props.selectedPool,
-  //     'note': depositNote.value,
-  //   })
-  // });
-
-  // const data = await response.json();
-  // if (data.success) {
-  //   console.log(data);
-
-
-  //   // const { nullifier, secret, commitmentHash } = data
-  //   // commitment.value = commitmentHash
-  //   // note.value = "phantom-eth." + props.poolAmount + "." + nullifier + "." + secret
-  // }
-
-
 }
+
+function updateFees(amount) {
+  fees.value = amount * 0.05 + " ETH"
+}
+
+watch(() => props.poolAmount, (newVal, oldVal) => {
+  updateFees(newVal)
+});
+
+onMounted(() => {
+  updateFees(props.poolAmount)
+})
+
 </script>
 
 <template>
@@ -77,13 +72,19 @@ const handleWithdrawal = async () => {
     <h3 class="text-lg font-medium text-white mb-4">Withdraw ETH</h3>
 
     <!-- Note Box -->
-    <div class="mb-6 p-4 bg-error-800 rounded-lg">
+    <div class="mb-6 p-4 bg-info-800 rounded-lg">
       <p class="text-sm text-gray-300">
         Paste your deposit note in the form below to withdraw your funds
       </p>
     </div>
 
     <Notification />
+
+    <div v-if="withdrawalSuccess" class="mb-6 p-4 bg-success-700 rounded-lg">
+      <p class="text-sm text-gray-300">
+        {{ withdrawalSuccessMessage }}
+      </p>
+    </div>
 
     <!-- Deposit Form -->
     <form @submit.prevent="handleWithdrawal">
@@ -94,6 +95,15 @@ const handleWithdrawal = async () => {
         </label>
         <div class="p-3 bg-gray-800 rounded-lg text-white">
           {{ selectedPool || 'Select an amount' }}
+        </div>
+      </div>
+
+      <div class="mb-4 mt-3">
+        <label class="block text-gray-300 text-sm font-medium mb-2">
+          Fees (Gas fees + Relayer fees)
+        </label>
+        <div class="p-3 bg-gray-800 rounded-lg text-white">
+          {{ fees }}
         </div>
       </div>
 
